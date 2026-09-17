@@ -46,6 +46,10 @@ if ( defined( 'WP_CLI' ) && WP_CLI ) {
  * Bootstraps the plugin once WordPress has loaded.
  */
 function mavo_indexnow_init() {
+	// Schema changes reach installs that already have the table; activation
+	// runs once. Costs one option read once the version matches.
+	Mavo_IndexNow_Logger::maybe_upgrade();
+
 	Mavo_IndexNow_Key_Manager::init();
 	Mavo_IndexNow_Eligibility::init();
 	Mavo_IndexNow_Submitter::init();
@@ -66,6 +70,7 @@ add_action( 'plugins_loaded', 'mavo_indexnow_init' );
  */
 function mavo_indexnow_activate() {
 	Mavo_IndexNow_Logger::create_table();
+	update_option( Mavo_IndexNow_Logger::DB_VERSION_OPTION, Mavo_IndexNow_Logger::DB_VERSION, false );
 	Mavo_IndexNow_Key_Manager::ensure_key();
 	Mavo_IndexNow_Key_Manager::add_rewrite_rule();
 	flush_rewrite_rules();

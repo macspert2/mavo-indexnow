@@ -26,6 +26,33 @@ class Mavo_IndexNow_Logger {
 	}
 
 	/**
+	 * Schema version. Bump whenever create_table()'s CREATE TABLE changes, so
+	 * that maybe_upgrade() re-runs dbDelta on sites already installed.
+	 */
+	const DB_VERSION = 1;
+
+	const DB_VERSION_OPTION = 'mavo_indexnow_db_version';
+
+	/**
+	 * Brings an already-installed site's schema up to date.
+	 *
+	 * create_table() only ever ran from register_activation_hook (and from the
+	 * multisite new-site hook), so a table created by an earlier version kept
+	 * that version's shape for ever: a column or index added later would have
+	 * reached new installs only. dbDelta is idempotent, so the upgrade is
+	 * simply "run it again", gated on a stored version so the usual cost is one
+	 * option read.
+	 */
+	public static function maybe_upgrade() {
+		if ( (int) get_option( self::DB_VERSION_OPTION, 0 ) === self::DB_VERSION ) {
+			return;
+		}
+
+		self::create_table();
+		update_option( self::DB_VERSION_OPTION, self::DB_VERSION, false );
+	}
+
+	/**
 	 * Creates the log table (idempotent, via dbDelta).
 	 */
 	public static function create_table() {
